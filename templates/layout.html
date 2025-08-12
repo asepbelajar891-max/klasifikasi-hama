@@ -31,18 +31,18 @@
             <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
                 <ul class="navbar-nav">
                     {% if current_user.is_authenticated %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.klasifikasi') }}">Cek Penyakit</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.riwayat') }}">Riwayat Pengecekan</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.penanganan_index') }}">Pustaka Hama & Penyakit</a></li>
+                        <li class="nav-item"><a class="nav-link {% if request.endpoint=='main.dashboard' %}active{% endif %}" href="{{ url_for('main.dashboard') }}" {% if request.endpoint=='main.dashboard' %}aria-current="page"{% endif %}>Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link {% if request.endpoint=='main.klasifikasi' %}active{% endif %}" href="{{ url_for('main.klasifikasi') }}" {% if request.endpoint=='main.klasifikasi' %}aria-current="page"{% endif %}>Cek Penyakit</a></li>
+                        <li class="nav-item"><a class="nav-link {% if request.endpoint=='main.riwayat' %}active{% endif %}" href="{{ url_for('main.riwayat') }}" {% if request.endpoint=='main.riwayat' %}aria-current="page"{% endif %}>Riwayat Pengecekan</a></li>
+                        <li class="nav-item"><a class="nav-link {% if request.endpoint=='main.penanganan_index' %}active{% endif %}" href="{{ url_for('main.penanganan_index') }}" {% if request.endpoint=='main.penanganan_index' %}aria-current="page"{% endif %}>Pustaka Hama & Penyakit</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('main.logout') }}">Logout</a></li>
                     {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.index') }}">Halaman Utama</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.login') }}">Login</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.register') }}">Register</a></li>
+                        <li class="nav-item"><a class="nav-link {% if request.endpoint=='main.index' %}active{% endif %}" href="{{ url_for('main.index') }}" {% if request.endpoint=='main.index' %}aria-current="page"{% endif %}>Halaman Utama</a></li>
+                        <li class="nav-item"><a class="nav-link {% if request.endpoint=='main.login' %}active{% endif %}" href="{{ url_for('main.login') }}" {% if request.endpoint=='main.login' %}aria-current="page"{% endif %}>Login</a></li>
+                        <li class="nav-item"><a class="nav-link {% if request.endpoint=='main.register' %}active{% endif %}" href="{{ url_for('main.register') }}" {% if request.endpoint=='main.register' %}aria-current="page"{% endif %}>Register</a></li>
                     {% endif %}
                     <li class="nav-item">
-                        <a class="nav-link" href="#" id="theme-toggle" title="Toggle dark mode">🌙</a>
+                        <a class="nav-link" href="#" id="theme-toggle" title="Toggle dark mode" aria-label="Ganti tema">🌙</a>
                     </li>
                 </ul>
             </div>
