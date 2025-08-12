@@ -1,8 +1,27 @@
+/* Theme Variables */
+:root {
+    --bg-color: #F5F5DC;
+    --text-color: #333333;
+    --header-bg: #2E7D32;
+    --header-text-color: #ffffff;
+    --main-bg: #FFFFFF;
+    --footer-text: #777;
+}
+
+.dark-mode {
+    --bg-color: #121212;
+    --text-color: #F5F5DC;
+    --header-bg: #1B5E20;
+    --header-text-color: #ffffff;
+    --main-bg: #333333;
+    --footer-text: #cccccc;
+}
+
 /* General Body Styles */
 body {
     font-family: 'Roboto', 'Lato', sans-serif;
-    background-color: #F5F5DC; /* Krem muda / Off-white */
-    color: #333333; /* Abu-abu tua untuk teks */
+    background-color: var(--bg-color);
+    color: var(--text-color);
     margin: 0;
     padding: 0;
     line-height: 1.6;
@@ -15,12 +34,17 @@ body {
 }
 
 /* Header */
+
 .header {
-    background-color: #2E7D32; /* Hijau tua */
+    background-color: var(--header-bg); /* Hijau tua */
     padding: 1rem 0;
-    color: white;
+    color: var(--header-text-color);
     text-align: center;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar {
+    background-color: var(--header-bg) !important;
 }
 
 .header h1 {
@@ -30,7 +54,7 @@ body {
 
 /* Main Content Area */
 .main-content {
-    background-color: #FFFFFF; /* Latar putih untuk konten utama */
+    background-color: var(--main-bg); /* Latar putih untuk konten utama */
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -108,7 +132,7 @@ body {
     text-align: center;
     margin-top: 30px;
     padding: 20px 0;
-    color: #777;
+    color: var(--footer-text);
     font-size: 0.9rem;
 }
 
