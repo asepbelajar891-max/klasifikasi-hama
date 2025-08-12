@@ -23,18 +23,27 @@
         <h1>Aplikasi Petani Cerdas</h1>
     </header>
 
-    <nav class="nav">
-        {% if current_user.is_authenticated %}
-            <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('main.klasifikasi') }}">Cek Penyakit</a>
-            <a href="{{ url_for('main.riwayat') }}">Riwayat Pengecekan</a>
-            <a href="{{ url_for('main.penanganan_index') }}">Pustaka Hama & Penyakit</a>
-            <a href="{{ url_for('main.logout') }}">Logout</a>
-        {% else %}
-            <a href="{{ url_for('main.index') }}">Halaman Utama</a>
-            <a href="{{ url_for('main.login') }}">Login</a>
-            <a href="{{ url_for('main.register') }}">Register</a>
-        {% endif %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.klasifikasi') }}">Cek Penyakit</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.riwayat') }}">Riwayat Pengecekan</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.penanganan_index') }}">Pustaka Hama & Penyakit</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.logout') }}">Logout</a></li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.index') }}">Halaman Utama</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.login') }}">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.register') }}">Register</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
     </nav>
 
     <main class="container">
