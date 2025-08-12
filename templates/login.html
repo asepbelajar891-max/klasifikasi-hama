@@ -16,16 +16,18 @@
                             {% endfor %}
                         {% endif %}
                     {% endwith %}
-                    <form method="POST" action="{{ url_for('main.login') }}">
+                    <form method="POST" action="{{ url_for('main.login') }}" class="needs-validation" novalidate>
                         <div class="form-group mb-3">
                             <label for="username">Username</label>
                             <input type="text" class="form-control" id="username" name="username" required>
+                            <div class="invalid-feedback">Username wajib diisi.</div>
                         </div>
                         <div class="form-group mb-3">
                             <label for="password">Password</label>
                             <input type="password" class="form-control" id="password" name="password" required>
+                            <div class="invalid-feedback">Password wajib diisi.</div>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Login</button>
+                        <button type="submit" class="btn btn-primary w-100" disabled>Login</button>
                     </form>
                 </div>
                 <div class="card-footer text-center">
@@ -35,4 +37,30 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+(() => {
+  'use strict';
+  const form = document.querySelector('.needs-validation');
+  const submitButton = form.querySelector('button[type="submit"]');
+
+  const toggleButton = () => {
+    submitButton.disabled = !form.checkValidity();
+  };
+
+  form.addEventListener('submit', event => {
+    if (!form.checkValidity()) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    form.classList.add('was-validated');
+  });
+
+  form.addEventListener('input', toggleButton);
+
+  toggleButton();
+})();
+</script>
 {% endblock %}

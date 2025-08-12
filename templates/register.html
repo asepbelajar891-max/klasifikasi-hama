@@ -16,20 +16,23 @@
                             {% endfor %}
                         {% endif %}
                     {% endwith %}
-                    <form method="POST" action="{{ url_for('main.register') }}">
+                    <form method="POST" action="{{ url_for('main.register') }}" class="needs-validation" novalidate>
                         <div class="form-group mb-3">
                             <label for="username">Username</label>
                             <input type="text" class="form-control" id="username" name="username" required>
+                            <div class="invalid-feedback">Username wajib diisi.</div>
                         </div>
                         <div class="form-group mb-3">
                             <label for="password">Password</label>
                             <input type="password" class="form-control" id="password" name="password" required>
+                            <div class="invalid-feedback">Password wajib diisi.</div>
                         </div>
                         <div class="form-group mb-3">
                             <label for="confirm_password">Konfirmasi Password</label>
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                            <div class="invalid-feedback">Konfirmasi password wajib diisi.</div>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Register</button>
+                        <button type="submit" class="btn btn-primary w-100" disabled>Register</button>
                     </form>
                 </div>
                 <div class="card-footer text-center">
@@ -39,4 +42,43 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+(() => {
+  'use strict';
+  const form = document.querySelector('.needs-validation');
+  const submitButton = form.querySelector('button[type="submit"]');
+  const password = form.querySelector('#password');
+  const confirmPassword = form.querySelector('#confirm_password');
+
+  const validatePasswords = () => {
+    if (confirmPassword) {
+      if (password.value !== confirmPassword.value) {
+        confirmPassword.setCustomValidity('Password tidak cocok');
+      } else {
+        confirmPassword.setCustomValidity('');
+      }
+    }
+  };
+
+  const toggleButton = () => {
+    validatePasswords();
+    submitButton.disabled = !form.checkValidity();
+  };
+
+  form.addEventListener('submit', event => {
+    if (!form.checkValidity()) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    form.classList.add('was-validated');
+  });
+
+  form.addEventListener('input', toggleButton);
+
+  toggleButton();
+})();
+</script>
 {% endblock %}
