@@ -1,0 +1,25 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+# Virtual env
+venv/
+.venv/
+env/
+ENV/
+# Secrets
+.env
+.env.*
+# OS/IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+# Artifacts besar (sesuaikan)
+Project2 (2).zip
+*.log
+# DB lokal (opsional)
+*.db
+*.sqlite
