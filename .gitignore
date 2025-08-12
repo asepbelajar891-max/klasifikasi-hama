@@ -17,8 +17,6 @@ ENV/
 Thumbs.db
 .vscode/
 .idea/
-# Artifacts besar (sesuaikan)
-Project2 (2).zip
 *.log
 # DB lokal (opsional)
 *.db
