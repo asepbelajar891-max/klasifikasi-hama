@@ -38,6 +38,12 @@
         </div>
     </div>
 
+    <!-- Grafik Statistik Penyakit -->
+    <h3 class="mt-5 mb-3">Distribusi Penyakit</h3>
+    <div class="chart-container" style="position: relative; height:400px; width:100%;">
+        <canvas id="diseaseChart"></canvas>
+    </div>
+
     <!-- Riwayat Terbaru -->
     <h3 class="mb-3">Riwayat Analisis Terbaru</h3>
     <div class="list-group">
@@ -60,4 +66,34 @@
         <a href="{{ url_for('main.riwayat') }}" class="btn btn-secondary">Lihat Semua Riwayat</a>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const diseaseLabels = {{ disease_labels|tojson }};
+    const diseaseValues = {{ disease_values|tojson }};
+    const ctx = document.getElementById('diseaseChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: diseaseLabels,
+            datasets: [{
+                label: 'Jumlah Kasus',
+                data: diseaseValues,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    precision: 0
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}
