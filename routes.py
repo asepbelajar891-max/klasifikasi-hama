@@ -113,18 +113,25 @@ def dashboard():
     # Statistik keseluruhan
     all_riwayat = Riwayat.query.filter_by(user_id=current_user.id).all()
     total_uploads = len(all_riwayat)
-    
+
     if all_riwayat:
         all_predictions = [r.prediction for r in all_riwayat]
-        most_common_disease = Counter(all_predictions).most_common(1)[0][0]
+        disease_counts = Counter(all_predictions)
+        disease_labels = list(disease_counts.keys())
+        disease_values = list(disease_counts.values())
+        most_common_disease = disease_counts.most_common(1)[0][0]
     else:
         most_common_disease = None
+        disease_labels = []
+        disease_values = []
 
-    return render_template('dashboard.html', 
+    return render_template('dashboard.html',
                            total_uploads=total_uploads,
                            last_disease=riwayat_list[0].prediction if riwayat_list else None,
                            most_common_disease=most_common_disease,
-                           riwayat_list=riwayat_list)
+                           riwayat_list=riwayat_list,
+                           disease_labels=disease_labels,
+                           disease_values=disease_values)
 
 # --- Rute Aplikasi Inti (Diproteksi) ---
 @main_bp.route('/klasifikasi')
