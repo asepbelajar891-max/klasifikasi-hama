@@ -47,6 +47,11 @@ body {
     background-color: var(--header-bg) !important;
 }
 
+.nav-link.active {
+    font-weight: bold;
+    border-bottom: 2px solid #FFC107;
+}
+
 .header h1 {
     margin: 0;
     font-size: 2rem;
@@ -82,6 +87,12 @@ body {
 .btn-secondary:hover {
     background-color: #FFA000;
     border-color: #FFA000;
+}
+
+.btn:focus, .btn:focus-visible {
+    outline: 2px dashed #FFC107;
+    outline-offset: 2px;
+    box-shadow: none;
 }
 
 /* Result Display */

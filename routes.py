@@ -261,6 +261,9 @@ def riwayat():
     sort_by = request.args.get('sort_by', 'timestamp')
     sort_order = request.args.get('sort_order', 'desc')
 
+    page = request.args.get('page', 1, type=int)
+    per_page = 12
+
     histories_query = Riwayat.query.filter_by(user_id=current_user.id)
 
     if query:
@@ -276,7 +279,8 @@ def riwayat():
     else:
         histories_query = histories_query.order_by(order_by_column.desc())
 
-    histories_from_db = histories_query.all()
+    pagination = histories_query.paginate(page=page, per_page=per_page, error_out=False)
+    histories_from_db = pagination.items
     
     for history in histories_from_db:
         # Ubah string JSON menjadi dictionary langsung pada objek
@@ -305,7 +309,7 @@ def riwayat():
         wib_timestamp = history.timestamp + timedelta(hours=7)
         history.formatted_date = wib_timestamp.strftime('%d %B %Y, %H:%M WIB').replace(wib_timestamp.strftime('%B'), MONTH_MAP[wib_timestamp.strftime('%B')])
 
-    return render_template('riwayat.html', histories=histories_from_db, query=query, sort_by=sort_by, sort_order=sort_order)
+    return render_template('riwayat.html', histories=histories_from_db, pagination=pagination, query=query, sort_by=sort_by, sort_order=sort_order)
 
 @main_bp.route('/riwayat/<int:riwayat_id>')
 @login_required
