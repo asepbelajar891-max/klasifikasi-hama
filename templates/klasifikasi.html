@@ -2,6 +2,7 @@
 
 {% block head_extra %}
     <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
+    <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.1/dist/cropper.min.css" />
 {% endblock %}
 
 {% block content %}
@@ -121,9 +122,29 @@
         </div>
     </div>
 </div>
+
+<!-- Cropper Modal -->
+<div class="modal fade" id="cropperModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sesuaikan Gambar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <img id="cropper-image" src="#" class="img-fluid" alt="Gambar untuk dipotong">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" id="cropper-confirm-btn" class="btn btn-primary">Potong &amp; Prediksi</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts_extra %}
+<script src="https://unpkg.com/cropperjs@1.6.1/dist/cropper.min.js"></script>
 <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
 <script>
     // --- Helper Functions ---
@@ -209,40 +230,78 @@
         }
     }
 
+    // --- Cropper Setup ---
+    const cropperImage = document.getElementById('cropper-image');
+    const cropperModalEl = document.getElementById('cropperModal');
+    const cropperConfirmBtn = document.getElementById('cropper-confirm-btn');
+    const cropperModal = new bootstrap.Modal(cropperModalEl);
+    let cropper = null;
+    let currentSource = null;
+    let myDropzoneInstance = null;
+
+    function openCropperModal(src) {
+        cropperImage.src = src;
+        if (cropper) {
+            cropper.destroy();
+        }
+        cropperModal.show();
+        cropper = new Cropper(cropperImage, { aspectRatio: 1, viewMode: 1 });
+    }
+
+    cropperConfirmBtn.addEventListener('click', () => {
+        if (!cropper) return;
+        cropper.getCroppedCanvas().toBlob(blob => {
+            const formData = new FormData();
+            const filename = currentSource === 'dropzone' && myDropzoneInstance && myDropzoneInstance.files[0] ? myDropzoneInstance.files[0].name : 'capture.jpg';
+            formData.append('file', blob, filename);
+            showSpinner();
+            fetch("{{ url_for('main.predict') }}", { method: 'POST', body: formData })
+                .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
+                .then(data => {
+                    if (data.status === 'not_a_leaf') {
+                        showToast(data.message, true);
+                    } else {
+                        displayResults(data);
+                        showToast('Klasifikasi berhasil!');
+                    }
+                })
+                .catch(error => {
+                    showToast(error.error || 'Gagal melakukan klasifikasi.', true);
+                })
+                .finally(() => {
+                    hideSpinner();
+                    cropperModal.hide();
+                    if (currentSource === 'dropzone' && myDropzoneInstance) {
+                        myDropzoneInstance.removeAllFiles();
+                    }
+                    if (currentSource === 'camera') {
+                        stopCamera();
+                    }
+                });
+        }, 'image/jpeg');
+    });
+
     // --- Dropzone Initialization ---
     Dropzone.options.uploadForm = {
-        paramName: "file", maxFilesize: 10, maxFiles: 1, acceptedFiles: "image/*", autoProcessQueue: true,
+        paramName: "file", maxFilesize: 10, maxFiles: 1, acceptedFiles: "image/*", autoProcessQueue: false,
         dictDefaultMessage: "Seret & Lepas file di sini atau klik untuk memilih",
         addRemoveLinks: true, dictRemoveFile: "Hapus file",
-        
+
         init: function() {
-            var myDropzone = this;
-            myDropzone.on("addedfile", file => {
+            myDropzoneInstance = this;
+            myDropzoneInstance.on("addedfile", file => {
                 document.getElementById('result-area').style.display = 'none';
                 const reader = new FileReader();
-                reader.onload = e => document.getElementById('selected-image-preview').src = e.target.result;
+                reader.onload = e => {
+                    document.getElementById('selected-image-preview').src = e.target.result;
+                    document.getElementById('image-preview-area').style.display = 'block';
+                    currentSource = 'dropzone';
+                    openCropperModal(e.target.result);
+                };
                 reader.readAsDataURL(file);
-                document.getElementById('image-preview-area').style.display = 'block';
             });
-            myDropzone.on("sending", () => showSpinner());
-            myDropzone.on("success", (file, response) => {
-                hideSpinner();
-                if (response.status === 'not_a_leaf') {
-                    showToast(response.message, true); // Tampilkan pesan error
-                } else {
-                    displayResults(response);
-                    showToast('Klasifikasi berhasil!');
-                }
-                myDropzone.removeFile(file);
-            });
-            myDropzone.on("error", (file, message) => {
-                hideSpinner();
-                const errorMessage = (typeof message === 'object' && message.error) ? message.error : message;
-                showToast(`Error: ${errorMessage}`, true);
-                myDropzone.removeFile(file);
-            });
-            myDropzone.on("removedfile", () => {
-                if (myDropzone.files.length === 0) {
+            myDropzoneInstance.on("removedfile", () => {
+                if (myDropzoneInstance.files.length === 0) {
                     document.getElementById('image-preview-area').style.display = 'none';
                 }
             });
@@ -324,36 +383,15 @@
     }
 
     function captureImage() {
-        showSpinner();
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        selectedImagePreview.src = canvas.toDataURL('image/jpeg');
-        imagePreviewArea.style.display = 'block';
 
-        canvas.toBlob(blob => {
-            const formData = new FormData();
-            formData.append('file', blob, 'capture.jpg');
-            
-            fetch("{{ url_for('main.predict') }}", { method: 'POST', body: formData })
-                .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
-                .then(data => {
-                    if (data.status === 'not_a_leaf') {
-                        showToast(data.message, true);
-                    } else {
-                        displayResults(data);
-                        showToast('Klasifikasi dari kamera berhasil!');
-                    }
-                })
-                .catch(error => {
-                    showToast(error.error || 'Gagal melakukan klasifikasi.', true);
-                })
-                .finally(() => {
-                    hideSpinner();
-                    stopCamera();
-                });
-        }, 'image/jpeg');
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        selectedImagePreview.src = dataUrl;
+        imagePreviewArea.style.display = 'block';
+        currentSource = 'camera';
+        openCropperModal(dataUrl);
     }
 
     startCameraBtn.addEventListener('click', function(event) {
