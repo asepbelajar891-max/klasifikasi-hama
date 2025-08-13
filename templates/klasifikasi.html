@@ -2,6 +2,7 @@
 
 {% block head_extra %}
     <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
+    <link rel="stylesheet" href="https://unpkg.com/cropperjs@1/dist/cropper.min.css" type="text/css" />
 {% endblock %}
 
 {% block content %}
@@ -108,6 +109,25 @@
     <p class="text-white mt-2">Menganalisis gambar...</p>
 </div>
 
+<!-- Cropper Modal -->
+<div class="modal fade" id="cropModal" tabindex="-1" aria-labelledby="cropModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cropModalLabel">Crop Gambar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <img id="cropper-image" src="#" class="img-fluid" alt="Gambar untuk crop">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="crop-btn">Crop &amp; Prediksi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast Container -->
 <div class="toast-container position-fixed top-0 end-0 p-3">
     <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
@@ -125,6 +145,7 @@
 
 {% block scripts_extra %}
 <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+<script src="https://unpkg.com/cropperjs@1/dist/cropper.min.js"></script>
 <script>
     // --- Helper Functions ---
     function showSpinner() {
@@ -146,6 +167,46 @@
         
         const toast = new bootstrap.Toast(toastEl);
         toast.show();
+    }
+
+    function sendToPredict(blob, filename) {
+        showSpinner();
+        const formData = new FormData();
+        formData.append('file', blob, filename);
+
+        return fetch("{{ url_for('main.predict') }}", { method: 'POST', body: formData })
+            .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
+            .finally(() => hideSpinner());
+    }
+
+    let cropper = null;
+    function openCropper(imageSrc, onCrop) {
+        const cropImage = document.getElementById('cropper-image');
+        cropImage.src = imageSrc;
+        const cropModalEl = document.getElementById('cropModal');
+        const cropModal = new bootstrap.Modal(cropModalEl);
+        cropModal.show();
+
+        cropModalEl.addEventListener('shown.bs.modal', () => {
+            cropper = new Cropper(cropImage, { viewMode: 1 });
+        }, { once: true });
+
+        document.getElementById('crop-btn').onclick = () => {
+            const canvas = cropper.getCroppedCanvas();
+            cropModal.hide();
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            onCrop(canvas);
+        };
+
+        cropModalEl.addEventListener('hidden.bs.modal', () => {
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        }, { once: true });
     }
 
     function displayResults(response) {
@@ -211,35 +272,46 @@
 
     // --- Dropzone Initialization ---
     Dropzone.options.uploadForm = {
-        paramName: "file", maxFilesize: 10, maxFiles: 1, acceptedFiles: "image/*", autoProcessQueue: true,
+        paramName: "file",
+        maxFilesize: 10,
+        maxFiles: 1,
+        acceptedFiles: "image/*",
+        autoProcessQueue: false,
         dictDefaultMessage: "Seret & Lepas file di sini atau klik untuk memilih",
-        addRemoveLinks: true, dictRemoveFile: "Hapus file",
-        
+        addRemoveLinks: true,
+        dictRemoveFile: "Hapus file",
+
         init: function() {
-            var myDropzone = this;
+            const myDropzone = this;
             myDropzone.on("addedfile", file => {
                 document.getElementById('result-area').style.display = 'none';
                 const reader = new FileReader();
-                reader.onload = e => document.getElementById('selected-image-preview').src = e.target.result;
+                reader.onload = e => {
+                    document.getElementById('selected-image-preview').src = e.target.result;
+                    document.getElementById('image-preview-area').style.display = 'block';
+
+                    openCropper(e.target.result, canvas => {
+                        selectedImagePreview.src = canvas.toDataURL('image/jpeg');
+                        canvas.toBlob(blob => {
+                            sendToPredict(blob, file.name)
+                                .then(data => {
+                                    if (data.status === 'not_a_leaf') {
+                                        showToast(data.message, true);
+                                    } else {
+                                        displayResults(data);
+                                        showToast('Klasifikasi berhasil!');
+                                    }
+                                })
+                                .catch(err => {
+                                    showToast(err.error || 'Gagal melakukan klasifikasi.', true);
+                                })
+                                .finally(() => {
+                                    myDropzone.removeFile(file);
+                                });
+                        }, 'image/jpeg');
+                    });
+                };
                 reader.readAsDataURL(file);
-                document.getElementById('image-preview-area').style.display = 'block';
-            });
-            myDropzone.on("sending", () => showSpinner());
-            myDropzone.on("success", (file, response) => {
-                hideSpinner();
-                if (response.status === 'not_a_leaf') {
-                    showToast(response.message, true); // Tampilkan pesan error
-                } else {
-                    displayResults(response);
-                    showToast('Klasifikasi berhasil!');
-                }
-                myDropzone.removeFile(file);
-            });
-            myDropzone.on("error", (file, message) => {
-                hideSpinner();
-                const errorMessage = (typeof message === 'object' && message.error) ? message.error : message;
-                showToast(`Error: ${errorMessage}`, true);
-                myDropzone.removeFile(file);
             });
             myDropzone.on("removedfile", () => {
                 if (myDropzone.files.length === 0) {
@@ -324,36 +396,34 @@
     }
 
     function captureImage() {
-        showSpinner();
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        selectedImagePreview.src = canvas.toDataURL('image/jpeg');
+
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        selectedImagePreview.src = dataUrl;
         imagePreviewArea.style.display = 'block';
 
-        canvas.toBlob(blob => {
-            const formData = new FormData();
-            formData.append('file', blob, 'capture.jpg');
-            
-            fetch("{{ url_for('main.predict') }}", { method: 'POST', body: formData })
-                .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
-                .then(data => {
-                    if (data.status === 'not_a_leaf') {
-                        showToast(data.message, true);
-                    } else {
-                        displayResults(data);
-                        showToast('Klasifikasi dari kamera berhasil!');
-                    }
-                })
-                .catch(error => {
-                    showToast(error.error || 'Gagal melakukan klasifikasi.', true);
-                })
-                .finally(() => {
-                    hideSpinner();
-                    stopCamera();
-                });
-        }, 'image/jpeg');
+        openCropper(dataUrl, croppedCanvas => {
+            selectedImagePreview.src = croppedCanvas.toDataURL('image/jpeg');
+            croppedCanvas.toBlob(blob => {
+                sendToPredict(blob, 'capture.jpg')
+                    .then(data => {
+                        if (data.status === 'not_a_leaf') {
+                            showToast(data.message, true);
+                        } else {
+                            displayResults(data);
+                            showToast('Klasifikasi dari kamera berhasil!');
+                        }
+                    })
+                    .catch(error => {
+                        showToast(error.error || 'Gagal melakukan klasifikasi.', true);
+                    })
+                    .finally(() => {
+                        stopCamera();
+                    });
+            }, 'image/jpeg');
+        });
     }
 
     startCameraBtn.addEventListener('click', function(event) {
