@@ -1,0 +1,10 @@
+node_modules
+.next
+out
+
+# env files
+.env.local
+.env.production
+
+# misc
+.DS_Store
